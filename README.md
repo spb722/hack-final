@@ -68,9 +68,7 @@ GOOGLE_API_KEY=your_api_key_here
 
 Run the setup script to authenticate with Google Calendar:
 
-```bash
-python setup_calendar_auth.py
-```
+
 
 This will:
 1. Start the OAuth 2.0 authorization flow

@@ -15,7 +15,7 @@ from google.adk.events.event import Event
 from google.adk.runners import Runner
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from google.genai import types
-from jarvis.agent import root_agent
+from mcp_fi_agent.agent import root_agent
 
 #
 # ADK Streaming
@@ -28,22 +28,26 @@ APP_NAME = "ADK Streaming example"
 session_service = InMemorySessionService()
 
 
-def start_agent_session(session_id, is_audio=False):
+async def start_agent_session(session_id, is_audio=False):
     """Starts an agent session"""
+    
+    try:
+        # Create a Session
+        session = session_service.create_session(
+            app_name=APP_NAME,
+            user_id=session_id,
+            session_id=session_id,
+        )
 
-    # Create a Session
-    session = session_service.create_session(
-        app_name=APP_NAME,
-        user_id=session_id,
-        session_id=session_id,
-    )
-
-    # Create a Runner
-    runner = Runner(
-        app_name=APP_NAME,
-        agent=root_agent,
-        session_service=session_service,
-    )
+        # Create a Runner
+        runner = Runner(
+            app_name=APP_NAME,
+            agent=root_agent,
+            session_service=session_service,
+        )
+    except Exception as e:
+        print(f"Failed to create session or runner: {e}")
+        raise
 
     # Set response modality
     modality = "AUDIO" if is_audio else "TEXT"
@@ -59,9 +63,10 @@ def start_agent_session(session_id, is_audio=False):
     # Create run config with basic settings
     config = {"response_modalities": [modality], "speech_config": speech_config}
 
-    # Add output_audio_transcription when audio is enabled to get both audio and text
+    # Add audio transcription configs when audio is enabled
     if is_audio:
         config["output_audio_transcription"] = {}
+        config["input_audio_transcription"] = {}
 
     run_config = RunConfig(**config)
 
@@ -196,19 +201,46 @@ async def websocket_endpoint(
     await websocket.accept()
     print(f"Client #{session_id} connected, audio mode: {is_audio}")
 
-    # Start agent session
-    live_events, live_request_queue = start_agent_session(
-        session_id, is_audio == "true"
-    )
+    try:
+        # Start agent session with timeout handling
+        live_events, live_request_queue = await asyncio.wait_for(
+            start_agent_session(session_id, is_audio == "true"),
+            timeout=30.0  # 30 second timeout
+        )
 
-    # Start tasks
-    agent_to_client_task = asyncio.create_task(
-        agent_to_client_messaging(websocket, live_events)
-    )
-    client_to_agent_task = asyncio.create_task(
-        client_to_agent_messaging(websocket, live_request_queue)
-    )
-    await asyncio.gather(agent_to_client_task, client_to_agent_task)
+        # Start tasks
+        agent_to_client_task = asyncio.create_task(
+            agent_to_client_messaging(websocket, live_events)
+        )
+        client_to_agent_task = asyncio.create_task(
+            client_to_agent_messaging(websocket, live_request_queue)
+        )
+        
+        # Wait for either task to complete or fail
+        try:
+            await asyncio.gather(agent_to_client_task, client_to_agent_task)
+        except Exception as e:
+            print(f"Error in messaging tasks: {e}")
+            agent_to_client_task.cancel()
+            client_to_agent_task.cancel()
+            raise
+            
+    except asyncio.TimeoutError:
+        print(f"Timeout starting agent session for client {session_id}")
+        await websocket.send_text(json.dumps({
+            "error": "Connection timeout",
+            "message": "Failed to connect to AI service within timeout period"
+        }))
+        await websocket.close()
+        return
+    except Exception as e:
+        print(f"Error starting agent session for client {session_id}: {e}")
+        await websocket.send_text(json.dumps({
+            "error": "Connection failed",
+            "message": str(e)
+        }))
+        await websocket.close()
+        return
 
     # Disconnected
     print(f"Client #{session_id} disconnected")
