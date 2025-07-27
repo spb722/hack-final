@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   adk-voice-agent:
+    image: spb722/apex:adk-voice-agent
     build:
       context: .
       dockerfile: Dockerfile
