@@ -1,4 +1,4 @@
-google-adk
+google.adk
 yfinance
 google-genai==1.14.0
 google-api-python-client>=2.169.0
@@ -81,6 +81,4 @@ tzlocal==5.3.1
 uritemplate==4.1.1
 urllib3==2.4.0
 uvicorn==0.34.2
-websockets==15.0.1
-wrapt==1.17.2
-zipp==3.21.0
+websockets
