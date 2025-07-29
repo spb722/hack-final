@@ -54,28 +54,6 @@
         position: relative;
       }
 
-      .app-header {
-        position: absolute;
-        top: 40px;
-        text-align: center;
-        z-index: 10;
-      }
-
-      .app-header h1 {
-        font-size: 2.5rem;
-        font-weight: 300;
-        margin-bottom: 8px;
-        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .app-header .subtitle {
-        font-size: 1rem;
-        color: var(--gray-medium);
-        opacity: 0.8;
-      }
 
       .app-main {
         flex: 1;
@@ -88,299 +66,45 @@
       .voice-orb-container {
         position: relative;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
       }
 
-      .voice-orb-background {
-        position: absolute;
-        width: 500px;
-        height: 500px;
-        border-radius: 50%;
-        pointer-events: none;
-        overflow: hidden;
-      }
-
-      /* Animated Background Particles */
-      .particle {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: rgba(66, 133, 244, 0.3);
-        border-radius: 50%;
-        animation: float 10s infinite linear;
-        animation-delay: var(--delay);
-        left: calc(50% + (var(--random) - 0.5) * 400px);
-        top: calc(50% + (var(--random) - 0.5) * 400px);
-      }
-
-      @keyframes float {
-        0% {
-          transform: translate(0, 0) rotate(0deg);
-          opacity: 0;
-        }
-        10% {
-          opacity: 1;
-        }
-        90% {
-          opacity: 1;
-        }
-        100% {
-          transform: translate(calc((var(--random) - 0.5) * 100px), calc((var(--random) - 0.5) * 100px)) rotate(360deg);
-          opacity: 0;
-        }
-      }
-
-      /* Main Voice Orb */
-      .voice-orb {
-        width: 200px;
-        height: 200px;
-        border-radius: 50%;
+      /* Particle Sphere */
+      .particle-sphere {
         position: relative;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 50%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s ease;
       }
 
-      .voice-orb:hover {
-        transform: scale(1.05);
+      .particle-sphere:hover {
+        transform: scale(1.02);
       }
 
-      .voice-orb:active {
-        transform: scale(0.95);
+      .sphere-particle {
+        will-change: transform, opacity;
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      
+      .particle-sphere {
+        transform-style: preserve-3d;
+        will-change: transform;
       }
 
-      /* Orb Inner Structure */
-      .orb-inner {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: 50%;
-        overflow: hidden;
-      }
-
-      .orb-core {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 60px;
-        height: 60px;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
-        border-radius: 50%;
-        animation: pulse-core 3s ease-in-out infinite;
-      }
-
-      @keyframes pulse-core {
-        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-        50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-      }
-
-      /* Concentric Rings */
-      .orb-ring {
-        position: absolute;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        animation: expand-ring 4s ease-in-out infinite;
-      }
-
-      .ring-1 {
-        top: 20px;
-        left: 20px;
-        right: 20px;
-        bottom: 20px;
-        animation-delay: 0s;
-      }
-
-      .ring-2 {
-        top: 40px;
-        left: 40px;
-        right: 40px;
-        bottom: 40px;
-        animation-delay: 1.3s;
-      }
-
-      .ring-3 {
-        top: 60px;
-        left: 60px;
-        right: 60px;
-        bottom: 60px;
-        animation-delay: 2.6s;
-      }
-
-      @keyframes expand-ring {
-        0% {
-          transform: scale(0.8);
-          opacity: 0;
-        }
-        25% {
-          opacity: 0.6;
-        }
-        50% {
-          transform: scale(1);
-          opacity: 0.3;
-        }
-        75% {
-          opacity: 0.1;
-        }
-        100% {
-          transform: scale(1.2);
-          opacity: 0;
-        }
-      }
-
-      /* Audio Visualization */
-      .audio-visualization {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 300px;
-        height: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        pointer-events: none;
-      }
-
-      .audio-bar {
-        position: absolute;
-        width: 3px;
-        background: linear-gradient(to top, var(--secondary-color), rgba(52, 168, 83, 0.3));
-        border-radius: 2px;
-        transform-origin: bottom center;
-        animation: audio-pulse 0.5s ease-in-out infinite alternate;
-        transform: rotate(calc(var(--index) * 30deg)) translateY(-120px);
-        height: var(--height);
-        min-height: 20px;
-      }
-
-      @keyframes audio-pulse {
-        0% { 
-          transform: rotate(calc(var(--index) * 30deg)) translateY(-120px) scaleY(0.5);
-          opacity: 0.6;
-        }
-        100% { 
-          transform: rotate(calc(var(--index) * 30deg)) translateY(-120px) scaleY(1);
-          opacity: 1;
-        }
-      }
-
-      /* Status Text */
-      .status-text {
-        margin-top: 40px;
-        font-size: 1.2rem;
-        color: var(--gray-medium);
-        text-align: center;
-        font-weight: 300;
-        animation: fade-in-out 2s ease-in-out infinite;
-      }
-
-      @keyframes fade-in-out {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
-      }
-
-      /* Messages Overlay */
-      .messages-overlay {
-        position: absolute;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        max-width: 600px;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 20px;
-        z-index: 5;
-      }
-
-      .messages-container {
-        max-height: 200px;
-        overflow-y: auto;
-      }
-
-      .message {
-        margin-bottom: 10px;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        line-height: 1.4;
-      }
-
-      .message.user {
-        background: rgba(66, 133, 244, 0.2);
-        text-align: right;
-      }
-
-      .message.model {
-        background: rgba(52, 168, 83, 0.2);
-      }
-
-      /* Connection Status */
-      .connection-status {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.9rem;
-        color: var(--gray-medium);
-      }
-
-      .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: var(--gray-medium);
-        transition: background-color 0.3s ease;
-      }
-
-      .status-dot.connected {
-        background: var(--secondary-color);
-        animation: pulse-connected 2s ease-in-out infinite;
-      }
-
-      @keyframes pulse-connected {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
 
       /* Responsive Design */
       @media (max-width: 768px) {
-        .app-header h1 {
-          font-size: 2rem;
+        .particle-sphere {
+          width: 400px !important;
+          height: 400px !important;
         }
+      }
 
-        .voice-orb {
-          width: 150px;
-          height: 150px;
-        }
-
-        .voice-orb-background {
-          width: 350px;
-          height: 350px;
-        }
-
-        .audio-visualization {
-          width: 250px;
-          height: 250px;
-        }
-
-        .audio-bar {
-          transform: rotate(calc(var(--index) * 30deg)) translateY(-90px);
-        }
-
-        .messages-overlay {
-          width: 90%;
-          bottom: 80px;
+      @media (max-width: 480px) {
+        .particle-sphere {
+          width: 300px !important;
+          height: 300px !important;
         }
       }
     </style>

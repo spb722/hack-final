@@ -241,7 +241,7 @@ class AudioManager {
         
         const elapsedTime = Date.now() - this.audioStartTime;
         const bytesPerSecond = this.totalAudioBytesSent / (elapsedTime / 1000);
-        const expectedRate = 24000 * 2; // 24kHz * 2 bytes per sample (matches AudioContext sample rate)
+        const expectedRate = 16000 * 2; // 16kHz * 2 bytes per sample
         
         console.log(`[CLIENT TO AGENT] Audio chunk #${this.audioChunksSent}:`);
         console.log(`  - Chunk size: ${audioBytes.byteLength} bytes`);
@@ -259,7 +259,7 @@ class AudioManager {
         
         // Calculate approximate audio duration
         const sampleCount = audioBytes.byteLength / 2; // 16-bit samples
-        const durationMs = (sampleCount / 24000) * 1000; // 24kHz sample rate
+        const durationMs = (sampleCount / 16000) * 1000; // 16kHz sample rate
         console.log(`  - Audio duration: ${durationMs.toFixed(2)} ms`);
       }
       
@@ -285,7 +285,7 @@ class AudioManager {
     } catch (error) {
       console.warn("Could not load audio-player.js, using fallback");
       // Fallback implementation
-      const audioContext = new AudioContext({ sampleRate: 24000 });
+      const audioContext = new AudioContext({ sampleRate: 16000 });
       await audioContext.audioWorklet.addModule('/static/js/pcm-player-processor.js');
       const node = new AudioWorkletNode(audioContext, 'pcm-player-processor');
       node.connect(audioContext.destination);
@@ -311,12 +311,12 @@ class AudioManager {
       // Fallback implementation
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
-          sampleRate: 24000,
+          sampleRate: 16000,
           channelCount: 1 
         } 
       });
       
-      const audioContext = new AudioContext({ sampleRate: 24000 });
+      const audioContext = new AudioContext({ sampleRate: 16000 });
       await audioContext.audioWorklet.addModule('/static/js/pcm-recorder-processor.js');
       
       const source = audioContext.createMediaStreamSource(stream);

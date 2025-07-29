@@ -105,11 +105,6 @@ const App = () => {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Voice Assistant</h1>
-        <p className="subtitle">Powered by Google ADK</p>
-      </header>
-      
       <main className="app-main">
         <VoiceOrb 
           isConnected={isConnected}
@@ -119,30 +114,6 @@ const App = () => {
           onToggleVoice={toggleVoice}
         />
       </main>
-      
-      {/* Messages display for debugging/context */}
-      {messages.length > 0 && (
-        <div className="messages-overlay">
-          <div className="messages-container">
-            {messages.slice(-3).map(message => (
-              <div 
-                key={message.id} 
-                className={`message ${message.role}`}
-              >
-                <strong>{message.role}:</strong> {message.content}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Connection status */}
-      <div className="connection-status">
-        <div className={`status-dot ${isConnected ? 'connected' : ''}`} />
-        <span>
-          {isConnected ? 'Connected' : 'Connecting...'}
-        </span>
-      </div>
     </div>
   );
 };

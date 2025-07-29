@@ -7,33 +7,107 @@ const VoiceOrb = ({
   audioLevel = 0, 
   onToggleVoice 
 }) => {
-  const [animationScale, setAnimationScale] = useState(1);
-  const orbRef = useRef(null);
+  const [particles, setParticles] = useState([]);
+  const [animationTime, setAnimationTime] = useState(0);
+  const containerRef = useRef(null);
   const animationFrameRef = useRef(null);
 
-  // Calculate orb scale based on audio level and state
+  // Generate particles in a 3D sphere formation
   useEffect(() => {
-    const animate = () => {
-      let targetScale = 1;
+    const generateParticles = () => {
+      // Reduced particle count for smooth animation
+      const particleCount = window.innerWidth <= 768 ? 150 : 300;
+      const newParticles = [];
       
-      if (isListening) {
-        // Audio reactive scaling when listening
-        targetScale = 1 + (audioLevel * 0.5);
-      } else if (isProcessing) {
-        // Gentle pulsing when processing
-        targetScale = 1 + Math.sin(Date.now() * 0.005) * 0.1;
-      } else if (isConnected) {
-        // Subtle breathing when idle but connected
-        targetScale = 1 + Math.sin(Date.now() * 0.002) * 0.05;
+      for (let i = 0; i < particleCount; i++) {
+        // Generate spherical coordinates
+        const phi = Math.acos(1 - 2 * Math.random()); // 0 to π
+        const theta = 2 * Math.PI * Math.random(); // 0 to 2π
+        const radius = 180 + Math.random() * 40; // Varying radius for depth
+        
+        // Convert to Cartesian coordinates
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        
+        // Create color gradient based on y position (height)
+        const normalizedY = (y + radius) / (2 * radius); // 0 to 1
+        const hue = 240 - (normalizedY * 180); // Blue (240) to Red (60)
+        const saturation = 70 + (normalizedY * 30); // 70% to 100%
+        const lightness = 50 + (normalizedY * 30); // 50% to 80%
+        
+        newParticles.push({
+          id: i,
+          originalX: x,
+          originalY: y,
+          originalZ: z,
+          x: x,
+          y: y,
+          z: z,
+          size: 2 + Math.random() * 3, // Larger particles to compensate for fewer count
+          opacity: 0.5 + Math.random() * 0.5,
+          color: `hsl(${Math.round(hue)}, ${Math.round(saturation)}%, ${Math.round(lightness)}%)`,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.3 + Math.random() * 0.7 // Slower movement for smoother animation
+        });
       }
       
-      // Smooth interpolation
-      setAnimationScale(prev => prev + (targetScale - prev) * 0.1);
+      setParticles(newParticles);
+    };
+
+    generateParticles();
+  }, []);
+
+  // Optimized animation loop using useRef for smooth 60fps
+  useEffect(() => {
+    let lastTime = 0;
+    const frameRate = 1000 / 60; // 60fps
+    
+    const animate = (currentTime) => {
+      // Throttle to 60fps
+      if (currentTime - lastTime < frameRate) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = currentTime;
+      
+      const time = currentTime * 0.001;
+      setAnimationTime(time);
+      
+      // Audio reactivity - calculate once per frame
+      let reactiveScale = 1;
+      if (isListening) {
+        reactiveScale = 1 + audioLevel * 0.3;
+      } else if (isProcessing) {
+        reactiveScale = 1 + Math.sin(time * 2) * 0.05;
+      } else if (isConnected) {
+        reactiveScale = 1 + Math.sin(time * 0.5) * 0.02;
+      }
+      
+      // Update particles with optimized calculations
+      setParticles(prevParticles => {
+        if (prevParticles.length === 0) return prevParticles;
+        
+        return prevParticles.map(particle => {
+          // Simplified floating animation
+          const timeOffset = time * particle.speed + particle.phase;
+          const floatX = particle.originalX + Math.sin(timeOffset) * 3;
+          const floatY = particle.originalY + Math.cos(timeOffset * 1.1) * 3;
+          const floatZ = particle.originalZ + Math.sin(timeOffset * 0.8) * 3;
+          
+          return {
+            ...particle,
+            x: floatX * reactiveScale,
+            y: floatY * reactiveScale,
+            z: floatZ * reactiveScale
+          };
+        });
+      });
       
       animationFrameRef.current = requestAnimationFrame(animate);
     };
     
-    animate();
+    animationFrameRef.current = requestAnimationFrame(animate);
     
     return () => {
       if (animationFrameRef.current) {
@@ -42,78 +116,57 @@ const VoiceOrb = ({
     };
   }, [isListening, isProcessing, isConnected, audioLevel]);
 
-  const getOrbColor = () => {
-    if (!isConnected) return '#666666';
-    if (isProcessing) return '#EA4335';
-    if (isListening) return '#34A853';
-    return '#4285F4';
-  };
-
-  const getOrbGlow = () => {
-    if (!isConnected) return 'none';
-    const color = getOrbColor();
-    const intensity = isListening ? audioLevel * 50 + 20 : 20;
-    return `0 0 ${intensity}px ${color}, 0 0 ${intensity * 2}px ${color}`;
+  const getParticleStyle = (particle) => {
+    // Project 3D coordinates to 2D
+    const perspective = 1000;
+    const scale = perspective / (perspective + particle.z);
+    const x2d = particle.x * scale;
+    const y2d = particle.y * scale;
+    
+    // Calculate opacity based on z-depth
+    const depthOpacity = Math.max(0.1, Math.min(1, (particle.z + 220) / 440));
+    const finalOpacity = particle.opacity * depthOpacity;
+    
+    // Size based on depth and audio
+    let finalSize = particle.size * scale;
+    if (isListening) {
+      finalSize *= (1 + audioLevel * 0.5);
+    }
+    
+    return {
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      width: `${finalSize}px`,
+      height: `${finalSize}px`,
+      backgroundColor: particle.color,
+      borderRadius: '50%',
+      transform: `translate(${x2d}px, ${y2d}px)`,
+      opacity: finalOpacity,
+      boxShadow: `0 0 ${finalSize * 2}px ${particle.color}`,
+      pointerEvents: 'none'
+    };
   };
 
   return (
-    <div className="voice-orb-container">
-      <div className="voice-orb-background">
-        {/* Animated background particles */}
-        {Array.from({ length: 50 }, (_, i) => (
-          <div 
-            key={i} 
-            className="particle" 
-            style={{
-              '--delay': `${i * 0.1}s`,
-              '--random': Math.random()
-            }}
-          />
-        ))}
-      </div>
-      
+    <div className="voice-orb-container" onClick={onToggleVoice}>
       <div 
-        ref={orbRef}
-        className="voice-orb"
-        onClick={onToggleVoice}
+        ref={containerRef}
+        className="particle-sphere"
         style={{
-          transform: `scale(${animationScale})`,
-          backgroundColor: getOrbColor(),
-          boxShadow: getOrbGlow(),
+          position: 'relative',
+          width: '600px',
+          height: '600px',
           cursor: 'pointer'
         }}
       >
-        <div className="orb-inner">
-          <div className="orb-core" />
-          {/* Concentric rings for depth */}
-          <div className="orb-ring ring-1" />
-          <div className="orb-ring ring-2" />
-          <div className="orb-ring ring-3" />
-        </div>
-        
-        {/* Audio visualization bars */}
-        {isListening && (
-          <div className="audio-visualization">
-            {Array.from({ length: 12 }, (_, i) => (
-              <div 
-                key={i}
-                className="audio-bar"
-                style={{
-                  '--index': i,
-                  '--height': `${20 + audioLevel * 60}%`,
-                  animationDelay: `${i * 0.1}s`
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <div className="status-text">
-        {!isConnected && "Connecting..."}
-        {isConnected && !isListening && !isProcessing && "Click to speak"}
-        {isListening && "Listening..."}
-        {isProcessing && "Processing..."}
+        {particles.map(particle => (
+          <div
+            key={particle.id}
+            className="sphere-particle"
+            style={getParticleStyle(particle)}
+          />
+        ))}
       </div>
     </div>
   );

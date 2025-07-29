@@ -156,8 +156,8 @@ async def client_to_agent_messaging(websocket, live_request_queue):
             print(f"[CLIENT TO AGENT] First 20 bytes: {decoded_data[:20].hex()}")
             print(f"[CLIENT TO AGENT] Last 20 bytes: {decoded_data[-20:].hex()}")
             
-            # Calculate approximate duration (assuming 24kHz, 16-bit, mono)
-            duration_ms = (len(decoded_data) / 2) / 24  # 2 bytes per sample, 24kHz
+            # Calculate approximate duration (assuming 16kHz, 16-bit, mono)
+            duration_ms = (len(decoded_data) / 2) / 16  # 2 bytes per sample, 16kHz
             print(f"[CLIENT TO AGENT] Estimated audio duration: {duration_ms:.2f} ms")
             
             live_request_queue.send_realtime(Blob(data=decoded_data, mime_type=mime_type))
